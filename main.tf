@@ -49,47 +49,60 @@ data "aws_ami" "example" {
   }
 }
 
+resource "aws_key_pair" "common_key" {
+  key_name   = "common-key"
+  public_key = file("~/.ssh/id_rsa.pub")  # Path to your public key file
+}
+
 
 # EC2 Instance
 resource "aws_instance" "example" {
     for_each = var.instances
     ami           = data.aws_ami.example.id
     instance_type = each.value
-    key_name     = "${each.key}-key"
+    key_name     = aws_key_pair.common_key.key_name
+
+    # Attached security group
+    vpc_security_group_ids = [aws_security_group.example_sg.id]
+    
     tags = {
         Name = "Instance-${each.key}"
     }
 }
 
-# VPC
-resource "aws_vpc" "example_vpc" {
-  cidr_block = "10.0.0.0/16"
+# # VPC
+# resource "aws_vpc" "example_vpc" {
+#   cidr_block = "10.0.0.0/16"
 
-  tags = {
-    Name = "example-vpc"
-  }
+#   tags = {
+#     Name = "example-vpc"
+#   }
+# }
+
+# # Subnet
+# resource "aws_subnet" "example_subnet" {
+#   vpc_id            = aws_vpc.example_vpc.id
+#   cidr_block        = "10.0.1.0/24"
+#   availability_zone = "us-east-1a"
+#   map_public_ip_on_launch = true
+
+#   tags = {
+#     Name = "example-subnet"
+#   }
+# }
+
+data "aws_vpc" "default" {
+  default = true
 }
 
-# Subnet
-resource "aws_subnet" "example_subnet" {
-  vpc_id            = aws_vpc.example_vpc.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
-
-  tags = {
-    Name = "example-subnet"
-  }
-}
-
-# Security Group
 resource "aws_security_group" "example_sg" {
   name        = "example-security-group"
   description = "Example Security Group"
-  vpc_id      = aws_vpc.example_vpc.id
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -105,6 +118,7 @@ resource "aws_security_group" "example_sg" {
     Name = "example-sg"
   }
 }
+
 
 # CloudWatch Alarms for EC2 instance monitoring
 resource "aws_cloudwatch_metric_alarm" "example_alarm" {
@@ -134,7 +148,3 @@ resource "local_file" "ansible_inventory" {
   })
   filename = "${path.module}/inventory.json"
 }
-
-
-
-
