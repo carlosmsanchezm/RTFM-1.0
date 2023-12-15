@@ -1,0 +1,14 @@
+[nodejs_group]
+%{ for ip in nodejs_public_ips ~}
+${ip}
+%{ endfor ~}
+
+[nginx_group]
+%{ for ip in nginx_ips ~}
+${ip} CN=my_custom_cn
+%{ endfor ~}
+
+[all:vars]
+%{ for ip in nodejs_private_ips ~}
+nodejs_ip = ${ip}
+%{ endfor ~}

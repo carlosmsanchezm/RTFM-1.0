@@ -67,29 +67,9 @@ resource "aws_instance" "example" {
     
     tags = {
         Name = "Instance-${each.key}"
+        Type = each.key  # 'nodejs' or 'nginx'
     }
 }
-
-# # VPC
-# resource "aws_vpc" "example_vpc" {
-#   cidr_block = "10.0.0.0/16"
-
-#   tags = {
-#     Name = "example-vpc"
-#   }
-# }
-
-# # Subnet
-# resource "aws_subnet" "example_subnet" {
-#   vpc_id            = aws_vpc.example_vpc.id
-#   cidr_block        = "10.0.1.0/24"
-#   availability_zone = "us-east-1a"
-#   map_public_ip_on_launch = true
-
-#   tags = {
-#     Name = "example-subnet"
-#   }
-# }
 
 data "aws_vpc" "default" {
   default = true
@@ -100,6 +80,7 @@ resource "aws_security_group" "example_sg" {
   description = "Example Security Group"
   vpc_id      = data.aws_vpc.default.id
 
+  # SSH Access
   ingress {
     from_port   = 22
     to_port     = 22
@@ -107,6 +88,31 @@ resource "aws_security_group" "example_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # HTTP Access
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS Access
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Node.js Application Access on Port 3000
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Outbound Rules
   egress {
     from_port   = 0
     to_port     = 0
@@ -141,10 +147,10 @@ resource "aws_cloudwatch_metric_alarm" "example_alarm" {
 }
 
 resource "local_file" "ansible_inventory" {
-  content = jsonencode({
-    myhosts = {
-      hosts = { for ip in aws_instance.example : ip.public_ip => {} }
-    }
-  })
-  filename = "${path.module}/inventory.json"
+    content = templatefile("${path.module}/inventory.tmpl", {
+        nodejs_public_ips  = [for name, instance in aws_instance.example : instance.public_ip if instance.tags["Type"] == "nodejs"],
+        nodejs_private_ips = [for name, instance in aws_instance.example : instance.private_ip if instance.tags["Type"] == "nodejs"],
+        nginx_ips          = [for name, instance in aws_instance.example : instance.public_ip if instance.tags["Type"] == "nginx"]
+    })
+    filename = "${path.module}/inventory.ini"
 }
