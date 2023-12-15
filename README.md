@@ -1,4 +1,4 @@
-# **README.md for Your Lab**
+# **README.md**
 
 ## **Overview**
 
@@ -48,13 +48,40 @@ Before starting this lab, ensure you have the following installed and set up:
     terraform init
     ```
     
-2. **Apply Terraform Plan**:
+    Expected Output:
+    
+    ```
+    Terraform has been successfully initialized!
+    ```
+    
+2. **Plan Terraform Deployment**:
+    
+    ```bash
+    terraform plan
+    ```
+    
+    Expected Output:
+    
+    ```bash
+    Plan: 7 to add, 0 to change, 0 to destroy.
+    ```
+    
+3. **Apply Terraform Plan**:
     
     ```bash
     terraform apply
     ```
     
-    - Confirm the plan to proceed. This will set up both the Node.js and Nginx EC2 instances.
+    When prompted, type **`yes`** to proceed.
+    
+    Expected Output:
+    
+    ```makefile
+    Apply complete! Resources: 7 added, 0 changed, 0 destroyed.
+    Outputs:
+    instance_details = ...
+    ```
+    
 
 ### **Step 2: Application and Reverse Proxy Deployment with Ansible**
 
@@ -65,6 +92,13 @@ Before starting this lab, ensure you have the following installed and set up:
     ```
     
     - This playbook deploys the Node.js application and sets up the Nginx server as a reverse proxy.
+    
+    Expected Output:
+    
+    ```
+    PLAY RECAP ******************************************************************
+    ```
+    
 2. **Access the Web Application**:
     - Use a web browser to access the application through the public IP of the Nginx server, provided by Terraform output.
 
@@ -136,6 +170,39 @@ Before starting this lab, ensure you have the following installed and set up:
     
 6. **Re-run the OpenSCAP Scan**:
     - Repeat Step 4 to validate the corrections.
+
+### **Final Step: Clean Up Resources**
+
+Once you have completed the lab and no longer need the AWS resources, it's important to clean up to avoid incurring unnecessary costs.
+
+1. **Destroy Terraform Resources**:
+    - Navigate back to the Terraform directory:
+        
+        ```bash
+        cd terraform
+        ```
+        
+    - Run the following command:
+        
+        ```bash
+        terraform destroy
+        ```
+        
+    - Confirm the destruction of the resources when prompted. This command will remove all resources that Terraform has created for this lab.
+        
+        Expected Output:
+        
+        ```yaml
+        Destroy complete! Resources: 7 destroyed.
+        ```
+        
+2. **Check AWS Console**:
+    - Optionally, log in to the AWS Console and verify that the resources have been properly terminated.
+
+### **Final Notes**
+
+- Make sure to run **`terraform destroy`** after you're finished with the lab to clean up the resources and avoid unnecessary costs.
+- The provided output snippets give you an idea of what to expect. If your output significantly differs, review the steps to identify any issues.
 
 ## **Conclusion**
 
