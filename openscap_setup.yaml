@@ -1,0 +1,13 @@
+- name: Install and configure OpenSCAP
+  hosts: all
+  become: true
+  tasks:
+    - name: Install OpenSCAP
+      ansible.builtin.yum:
+        name: openscap-scanner
+        state: present
+
+- name: Install SCAP Security Guide
+  ansible.builtin.yum:
+    name: scap-security-guide
+    state: present

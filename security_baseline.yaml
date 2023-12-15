@@ -1,0 +1,77 @@
+- name: Apply baseline security configurations
+  hosts: all
+  become: true
+  tasks:
+    - name: Update all system packages to latest versions
+      ansible.builtin.yum:
+        name: '*'
+        state: present
+        security: true
+
+    - name: Secure SSH configuration
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^X11Forwarding', line: 'X11Forwarding no' }
+
+    - name: Disable unnecessary services
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - nfs-lock
+        - rpcbind
+      register: service_result
+      failed_when: >
+        service_result.failed and ('Could not find the requested service' not in service_result.msg)
+
+    - name: Remove unauthorized users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop:
+        - exampleuser1
+        - exampleuser2
+
+    - name: Set permissions for sensitive files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { path: '/etc/passwd', owner: 'root', group: 'root', mode: '0644' }
+        - { path: '/etc/shadow', owner: 'root', group: 'root', mode: '0600' }
+
+    - name: Ensure auditd is installed and configured
+      ansible.builtin.yum:
+        name: audit
+        state: present
+
+    - name: Start and enable auditd service
+      ansible.builtin.service:
+        name: auditd
+        state: started
+        enabled: true
+
+- name: Install and configure OpenSCAP
+  hosts: all
+  become: true
+  tasks:
+    - name: Install OpenSCAP
+      ansible.builtin.yum:
+        name: openscap-scanner
+        state: present
+
+- name: Install SCAP Security Guide
+  ansible.builtin.yum:
+    name: scap-security-guide
+    state: present
+
+

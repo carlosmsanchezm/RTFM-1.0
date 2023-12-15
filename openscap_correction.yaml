@@ -1,0 +1,5 @@
+- name: Ensure 'atd' service is disabled and stopped
+  ansible.builtin.systemd:
+    name: atd
+    enabled: no
+    state: stopped
